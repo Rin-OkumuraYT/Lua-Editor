@@ -1,0 +1,164 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Lua Editor</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: monospace;
+      background: #1e1e1e;
+      color: white;
+    }
+    #toolbar {
+      background: #2d2d2d;
+      padding: 10px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      background: #3b3b3b;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #555;
+    }
+    #editor {
+      height: 70vh;
+    }
+    #output {
+      background: #111;
+      padding: 10px;
+      height: 20vh;
+      overflow: auto;
+      border-top: 2px solid #333;
+    }
+    .cm-keyword { color: #569CD6; }
+    .cm-variable { color: #9CDCFE; }
+    .cm-string { color: #CE9178; }
+    .cm-comment { color: #6A9955; font-style: italic; }
+    .cm-number { color: #B5CEA8; }
+    .cm-builtin { color: #C586C0; }
+    #colorPickerPopup {
+      position: absolute;
+      display: none;
+      padding: 10px;
+      background: #2d2d2d;
+      border: 1px solid #555;
+      border-radius: 5px;
+      z-index: 1000;
+    }
+    #footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 13px;
+      color: #aaa;
+    }
+    #youtubeIcon {
+      width: 32px;
+      height: 32px;
+      margin-top: 10px;
+      cursor: pointer;
+      filter: grayscale(100%) brightness(1.5);
+      background-color: transparent;
+      border-radius: 0;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.12/mode/lua/lua.min.js"></script>
+</head>
+<body>
+  <div id="toolbar">
+    <button onclick="runCode()">Run</button>
+    <button onclick="clearEditor()">Clear</button>
+    <button onclick="downloadCode()">Download</button>
+    <button onclick="copyCode()">Copy</button>
+  </div>  <textarea id="editor"></textarea>  <div id="output">Output will appear here</div>  <div id="colorPickerPopup">
+    <label style="color:white">Pick Color:</label>
+    <input type="color" id="colorPicker">
+  </div>  <div id="footer">
+    <div>Created by Rin Okumura</div>
+    <div style="margin-top: 5px;">
+      ©Copyright 2025 Lua Editor<br>
+    </div>
+    <div>
+      <img id="youtubeIcon" src="https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_(2017).svg" alt="YouTube Icon" onclick="window.open('https://youtube.com/@rin-okumurayt', '_blank')">
+    </div>
+  </div>  <script>
+    const editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+      lineNumbers: true,
+      mode: "lua",
+      theme: "default"
+    });
+
+    function runCode() {
+      const code = editor.getValue();
+      document.getElementById("output").textContent = `Pretending to run Lua code\n${code}`;
+    }
+
+    function clearEditor() {
+      editor.setValue("");
+      document.getElementById("output").textContent = "Output will appear here";
+    }
+
+    function downloadCode() {
+      const code = editor.getValue();
+      if (!code.trim()) {
+        alert("The script is empty. Unable to download");
+        return;
+      }
+      const blob = new Blob([code], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'script.lua';
+      a.click();
+    }
+
+    function copyCode() {
+      const code = editor.getValue();
+      if (!code.trim()) {
+        alert("The script is empty There is nothing to copy");
+        return;
+      }
+      navigator.clipboard.writeText(code)
+        .then(() => alert("Script copied to clipboard!"))
+        .catch(err => alert("Unable to Copy"));
+    }
+
+    editor.on("cursorActivity", function() {
+      const cursor = editor.getCursor();
+      const token = editor.getTokenAt(cursor);
+      if (token.string.includes("Color3.new")) {
+        const coords = editor.cursorCoords(cursor, "page");
+        const popup = document.getElementById("colorPickerPopup");
+        popup.style.top = coords.top + "px";
+        popup.style.left = coords.left + "px";
+        popup.style.display = "block";
+      } else {
+        document.getElementById("colorPickerPopup").style.display = "none";
+      }
+    });
+
+    document.getElementById("colorPicker").addEventListener("input", function(e) {
+      const hex = e.target.value;
+      const rgb = hexToRGB(hex);
+      const newText = `Color3.new(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+      const cursor = editor.getCursor();
+      editor.replaceRange(newText + "\n", { line: cursor.line, ch: 0 }, { line: cursor.line + 1, ch: 0 });
+      document.getElementById("colorPickerPopup").style.display = "none";
+    });
+
+    function hexToRGB(hex) {
+      const bigint = parseInt(hex.slice(1), 16);
+      const r = ((bigint >> 16) & 255) / 255;
+      const g = ((bigint >> 8) & 255) / 255;
+      const b = (bigint & 255) / 255;
+      return { r: r.toFixed(2), g: g.toFixed(2), b: b.toFixed(2) };
+    }
+  </script></body>
+</html>
